@@ -1,4 +1,8 @@
-import type { TransformsStyle } from "react-native";
+import type { TransformsStyle, Animated } from "react-native";
+
+/*
+* Taken from the PR by elliottkember: https://github.com/sueLan/react-native-anchor-point/pull/16
+*/
 
 export interface Point {
     x: number;
@@ -12,12 +16,15 @@ export interface Size {
 
 const isValidSize = (size: Size): boolean => {
     return size && size.width > 0 && size.height > 0;
-}; 
+};
 
 const defaultAnchorPoint = { x: 0.5, y: 0.5 };
 
-export const withAnchorPoint = (transform: TransformsStyle, anchorPoint: Point, size: Size) => {
-    if(!isValidSize(size)) {
+export const withAnchorPoint = (
+    transform: TransformsStyle | Animated.WithAnimatedValue<TransformsStyle>,
+    anchorPoint: Point, size: Size
+) => {
+    if (!isValidSize(size)) {
         return transform;
     }
 
@@ -27,17 +34,20 @@ export const withAnchorPoint = (transform: TransformsStyle, anchorPoint: Point, 
     }
 
     if (anchorPoint.x !== defaultAnchorPoint.x && size.width) {
-        const shiftTranslateX = [];
+        const shiftTranslateX: { translateX: number }[] = [];
 
         // shift before rotation
         shiftTranslateX.push({
             translateX: size.width * (anchorPoint.x - defaultAnchorPoint.x),
         });
-        injectedTransform = [...shiftTranslateX, ...injectedTransform];
-        // shift after rotation
-        injectedTransform.push({
-            translateX: size.width * (defaultAnchorPoint.x - anchorPoint.x),
-        });
+
+        if (Array.isArray(injectedTransform)) {
+            injectedTransform = [...shiftTranslateX, ...injectedTransform];
+            // shift after rotation
+            injectedTransform.push({
+                translateX: size.width * (defaultAnchorPoint.x - anchorPoint.x),
+            });
+        }
     }
 
     if (!Array.isArray(injectedTransform)) {
@@ -45,7 +55,7 @@ export const withAnchorPoint = (transform: TransformsStyle, anchorPoint: Point, 
     }
 
     if (anchorPoint.y !== defaultAnchorPoint.y && size.height) {
-        let shiftTranslateY = [];
+        let shiftTranslateY: { translateY: number }[] = [];
         // shift before rotation
         shiftTranslateY.push({
             translateY: size.height * (anchorPoint.y - defaultAnchorPoint.y),
